@@ -33,7 +33,7 @@ fdf.columns = ['director_name', 'actor_name']
 fdf.to_csv('Direc_actor_data.csv',index=False)
 
 #create the graph
-g = nx.from_pandas_edgelist(dff, 'director_name', 'actor_name')
+g = nx.from_pandas_edgelist(fdf, 'director_name', 'actor_name')
             
             #returns the noubors list
 def neib(ne):
