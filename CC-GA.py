@@ -7,6 +7,7 @@ df=df[df['director_name'].notnull()]
 
 #Take the actor1 af dataframe1 and dataframe2 actor2,Alseo 4
 
+
 df1 = df[['director_name','actor_1_name']]
 df2=df[['director_name','actor_2_name']]
 
@@ -17,20 +18,19 @@ df2.columns = ['director_name', 'actor_1_name']
 
 
 dff= df1.append(df2)
-dff.columns = ['director_name', 'actor_name']
+df3 = df[['director_name','actor_3_name']]
+#rename coloumn
+df3.columns = ['director_name', 'actor_1_name']
+fdf= dff.append(df3)
 
-#we can export maybe the seconde
+fdf.columns = ['director_name', 'actor_name']
+
+#reseting index
+#fdf = fdf.reset_index()
+
+#we can export 
 # dff.to_csv('formatted-data.csv', date_format='%B %d, %Y')
- dff.to_csv(('formatted2-data.csv',index=False)
-
-
-
-
-#παραπανω κανουμε εξαγωγη σε csv και το ανοιγουμε με gephi για να δουμε τα cluster poy dhmhoyurgoyntai
-
-
-
-
+fdf.to_csv('Direc_actor_data.csv',index=False)
 
 #create the graph
 g = nx.from_pandas_edgelist(dff, 'director_name', 'actor_name')
@@ -42,20 +42,42 @@ def neib(ne):
         n.append(i)
     return n
 
+
+# Compute modularity value from graph G based on clustering
+def modularity(G, clustering):
+    if clustering==[]:
+        clusters=[]
+    else:
+        clusters = max(clustering) + 1
+    modularity = 0 # Initialize total modularity value
+
+    #Iterate over all clusters
+    for i in range(clusters):
+
+        # Get the nodes that belong to the i-th cluster (increase node id by 1)
+        nodeList = [n+1 for n,v in enumerate(clustering) if v == i]
+
+        # Create the subgraphs that correspond to each cluster				
+        subG = G.subgraph(nodeList)
+        temp1 = nx.number_of_edges(subG) / float(nx.number_of_edges(G))
+        temp2 = pow(sum(nx.degree(G, nodeList).values()) / float(2 * nx.number_of_edges(G)), 2)
+        modularity = modularity + (temp1 - temp2)
+    return modularity
+
 #example
 node='Robert De Niro'
 
 nei=g[node]
 
 #take the ccoeficient neibhors the larger coefficeint/ return the node and the coefficent number
-j=[]
- def clst(g,nodes):
+
+def clst(g,nodes):
     k=0
     j=[]
     n=[]
-    for nod in g[nodes]:
-        print(nx.clustering(g,nod))
-        print ('node:'+str(nod) + '-clus_coeff:'+str(nx.clustering(g,nod)))
+    for nod in nodes:
+        #print(nx.clustering(g,nod))
+        #print ('node:'+str(nod) + '-clus_coeff:'+str(nx.clustering(g,nod)))
         #if k<float(nx.clustering(g,nod)):
         k=(nx.clustering(g,nod))
         #print('yeeeesfsfdsfdsfdsffdsfdsfdsfdgfdgfdgfddgfdgdfgsfdsfsfsdfsfsdfdsfsdfdsfee')
@@ -66,7 +88,7 @@ j=[]
     return j,n
 
 
-#find the maximum cc cluster coeffficent
+#find the maximum cc
 def nodech(gra,nod):
     a=clst(gra,nod)
     m=max(a[0])
@@ -76,7 +98,7 @@ def nodech(gra,nod):
     return a[1][inde],a[0][inde]
      
 #nx.draw(g)
-node2='Steven Spielberg'
+node='Steven Spielberg'
 #number of nodes 
 pupula=len(g)
 
@@ -85,5 +107,9 @@ pupula=len(g)
 
 
 
-crsRate=0.01
-mutatuRate=0.01
+#crsRate=0.01
+#mutatuRate=0.01
+
+
+
+    
