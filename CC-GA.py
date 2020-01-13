@@ -58,7 +58,10 @@ fdf.to_csv('Direc_actor_data.csv',index=False)
 
 #create the graph
 g = nx.from_pandas_edgelist(fdf, 'director_name', 'actor_name')
-G = nx.from_pandas_edgelist(graphData, 'director_name', 'actor_name','eval')
+G = nx.from_pandas_edgelist(graphData, 'director_name', 'actor_name', ['eval'])
+
+#take the edges list weigts
+list(G.edges(data=True))
             
             #returns the noubors list
 def neib(ne):
@@ -96,31 +99,80 @@ nei=g[node]
 
 #take the ccoeficient neibhors the larger coefficeint/ return the node and the coefficent number
 
-def clst(g,nodes):
-    k=0
-    j=[]
-    n=[]
+# cc for all neibors
+# cc for all neibors
+def clst(G, nodes):
+    k = 0
+    j = []
+    n = []
     for nod in nodes:
-        #print(nx.clustering(g,nod))
-        #print ('node:'+str(nod) + '-clus_coeff:'+str(nx.clustering(g,nod)))
-        #if k<float(nx.clustering(g,nod)):
-        k=(nx.clustering(g,nod))
-        #print('yeeeesfsfdsfdsfdsffdsfdsfdsfdgfdgfdgfddgfdgdfgsfdsfsfsdfsfsdfdsfsdfdsfee')
-        #print ('node:'+str(nod) + '-clus_coeff:'+str(nx.clustering(g,nod)))
-        #j=nod
+        # print(nx.clustering(G,nod))
+        # print ('node:'+str(nod) + '-clus_coeff:'+str(nx.clustering(G,nod)))
+        # if k<float(nx.clustering(g,nod)):
+        k = (nx.clustering(G, nod))
+        # print('yeeeesfsfdsfdsfdsffdsfdsfdsfdgfdgfdgfddgfdgdfgsfdsfsfsdfsfsdfdsfsdfdsfee')
+        # print ('node:'+str(nod) + '-clus_coeff:'+str(nx.clustering(g,nod)))
+        # j=nod
         j.append(float(k))
         n.append(nod)
-    return j,n
 
+    return n, j
+
+
+
+#take the maximum cc forthe neibor
 
 #find the maximum cc
-def nodech(gra,nod):
-    a=clst(gra,nod)
-    m=max(a[0])
-    inde=a[0].index(max(a[0]))
+def nodech(nod):
+    m=max(nod[1])
+    inde=nod[1].index(max(nod[1]))
+    no=nod[0][inde]
 
 # the maximim cc for g,node is a[inde][0], and te chosen cluster is
-    return a[1][inde],a[0][inde]
+    return no,inde
+
+def nebigorList(G,no):
+    allne=G.neighbors(no)
+    return neib(allne)
+
+
+#cc for all graph return for each node of the graf the node and the cc node with value cc
+
+ccg=[]
+node=[]
+for i in g:
+    nn=nebigorList(g,i)
+    pp=clst(g,nn)
+    mm=nodech(pp)
+    node.append(i)
+    ccg.append(mm)
+
+df4=pd.DataFrame()
+df4["node"]=node
+df4["cc"]=ccg
+print(df4)
+grpahcc=pd.DataFrame()
+
+
+node2=[]
+ToNode=[]
+cc2=[]
+for i in range(0,len(df4)):
+    node2.append(df4["node"][i])
+    ToNode.append(df4["cc"][i][0])
+    cc2.append(df4["cc"][i][1])
+grpahcc["node"]=node2
+grpahcc["Tonode"]=ToNode
+grpahcc["cc"]=cc2
+
+
+#graph cc is the seconfd graph for cluster coeficent now wwe can export the data to analyze to  gephi as edge list
+grpahcc.to_csv('cc.csv',index=False)
+
+g2 = nx.from_pandas_edgelist(grpahcc, 'node', 'Tonode')
+
+comunitiesnode=[ c for c in sorted(nx.connected_components(g2), key=len, reverse=True)]
+numcommunities=len(comunitiesnode)
      
 #nx.draw(g)
 node='Steven Spielberg'
