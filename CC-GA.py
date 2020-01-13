@@ -171,8 +171,25 @@ grpahcc.to_csv('cc.csv',index=False)
 
 g2 = nx.from_pandas_edgelist(grpahcc, 'node', 'Tonode')
 
+#take the connected graph to find the numbe rof comminities
 comunitiesnode=[ c for c in sorted(nx.connected_components(g2), key=len, reverse=True)]
+
+#number of communities
 numcommunities=len(comunitiesnode)
+
+population=pd.DataFrame()
+gen=[]
+comm=[]
+gencount=0
+
+for i in comunitiesnode:
+    gencount=gencount+1
+    gen.append(gencount)
+    comm.append(i)
+
+population['gen']=gen
+population['community']=comm
+
      
 #nx.draw(g)
 node='Steven Spielberg'
