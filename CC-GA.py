@@ -68,8 +68,20 @@ def ccNodeVal(g,cc):
     cc['mmCCNode']=nodeL
     cc['mmCCval']=km
 
+
+#run and append @Dataset for each node the max node CC with the value CC
 ccNodeVal(G,cc)
 
 #ToDo Now we can  create the initial popoulation is the node and ccNode
+
+
+#ToDo graph node and mmCCnode
+
+
+#ToDo find the conencted componets of the new graph and is the chromosome
+
+#ToDo Find the parametets of Genetic
+
+#ToDo Start the Genetic implementation
 
 
