@@ -57,7 +57,7 @@ def ccNodeVal(g,cc):
             k = (nx.clustering(g, i))
             print('node', c, ' has neibors ', i,' and the cc is ',k)
 
-            if (k>ko):
+            if (k>=ko):
                 ko=k
                 node1=i
         print("The maximou CC is node",node1, 'with maximum cc ',ko)
@@ -75,10 +75,16 @@ ccNodeVal(G,cc)
 #ToDo Now we can  create the initial popoulation is the node and ccNode
 
 
-#ToDo graph node and mmCCnode
 
 
-#ToDo find the conencted componets of the new graph and is the chromosome
+#graph node and mmCCnode
+G2 = nx.from_pandas_edgelist(cc, 'node', 'mmCCNode')
+
+# find the conencted componets of the new graph and is the chromosome
+#the initial popoulation  is concomp
+concomp=list(nx.connected_components(G2))
+
+
 
 #ToDo Find the parametets of Genetic
 
