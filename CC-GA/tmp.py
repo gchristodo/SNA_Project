@@ -95,7 +95,7 @@ def Convert(lst):
 #This is the cross over function pick a random parant
 def Ucross(par1,par2):
     out = []
-    for i in range (0,len(par1)):#TODO need try cach in case the length of par1!=par2
+    for i in range (0,len(par1)):#TODOneed try cach in case the length of par1!=par2
         condi=bool(random.getrandbits(1)) #condi random Out True or false
         if condi==True:
             out.append(par1[i])
@@ -155,7 +155,7 @@ popoulationInit['chromB']=cc['mmCCNode']
 
 chromosom=[]
 
-loopy=100
+loopy=1000
 Ga=[]
 concompA=[]
 while loopy>0:
@@ -205,7 +205,7 @@ for i in gp:
     concomponet.append(modularity(i,list(list(nx.connected_components(i)))))
 result['modularity']=concomponet
 #take finala result the result for next generation
-resultF=result[result['modularity']>0.70]
+resultF=result[result['modularity']>0.75]
 
 #we select the second generation all the chromosomu with modularity > 0.79
 offspiringN= pd.DataFrame()
@@ -216,9 +216,56 @@ for i in resultF.index.values.tolist():
     offspiringN['chromosom' + str(i)] = offspiring['chromosom' + str(i)]
 
 
-#we have the generation in loop
-for gloop in range (1,3):
-    print(i)
+#we have the generation in loop from now each generation will generated in loop  wile we do not have impovments
+######################################LOOP#######################################################################
+for generation in range (1,3):
+    indx2=[]
+
+    tmp2=[]
+    #for i in range(0, offspiringN.shape[1] - 1):
+    offspiring = pd.DataFrame()
+    for ind in indx:
+
+        offspiring['node']=cc['node']
+        #TODO we have to add the probability of cross
+        ran =  random.choice(indx)  # is the random  chose from the list
+        chrRan = 'chromosom' + str(ran)
+        off = 'chromosom' + str(ind)
+        tmp2 = (Ucross(list(offspiringN[off]), offspiringN[chrRan]))
+        offspiring['chromosom' + str(ind)] = tmp2
+        indx2.append('chromosom' + str(ind))
+        tmp2=[]
+
+    # evalouation each chromosome
+    # we have to bult a graph for each cromosome and find the conected comunites
+    # then we run modularity and storees it
+    concomponet = []
+    result = pd.DataFrame()
+    gp = []
+
+    for i in indx2:  # we have 2 extra coloum 0 coloumn and node coloumn
+        #chro = 'chromosom' + str(i)
+        gp.append(nx.from_pandas_edgelist(offspiring, i, 'node'))
+        #print(chro)
+    for i in gp:
+        # gr=gp[i]
+        concomponet.append(modularity(i, list(list(nx.connected_components(i)))))
+        result['modularity'] = concomponet
+        # take finala result the result for next generation
+        resultF = result[result['modularity'] > 0.75]
+
+    # we select the second generation all the chromosomu with modularity > 0.79
+    offspiringN = pd.DataFrame()
+
+    offspiringN['node'] = cc['node']
+    indx = resultF.index.values.tolist()
+    for i in resultF.index.values.tolist():
+        offspiringN['chromosom' + str(i)] = offspiring['chromosom' + str(i)]
+
+
+
+
+
 
 
 
