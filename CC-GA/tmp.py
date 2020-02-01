@@ -190,14 +190,14 @@ while neibrLoop>0:
 nodesB=list(nx.nodes(G))
 random.shuffle(nodesB)
 chromosom=[]
-while randomn>0:
-
+#we have to be carefiulk with loopy index because is the index of chromosum and we have deiferent names
+while randomn<=loopy:
     for i in nodesA:
         chromosom.append(nodesB[i])
-    tempna = 'chromosom' + str(randomn)
-    randomn=randomn-1
+        tempna = 'chromosom' + str(randomn+3)# add 3 bacouse we apend the node and chromosomu0
+        chromosom = []
     popoulationInit[tempna] = chromosom
-    chromosom = []
+    randomn = randomn +1
     
 
 # while randomn>0:
