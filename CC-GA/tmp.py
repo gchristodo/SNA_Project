@@ -2,6 +2,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import pandas as pd
 import random
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 #for notebook remove below  #
 #%pylab inline
 
@@ -51,7 +53,7 @@ def ccNodeVal(g,cc):
         for i in c:
 
             k = (nx.clustering(g, i))
-            print('node', c, ' has neibors ', i,' and the cc is ',k)
+           # print('node', c, ' has neibors ', i,' and the cc is ',k)
 
             if (k>ko):
                 ko=k
@@ -103,7 +105,11 @@ def Ucross(par1,par2):
             out.append(par2[i])
     return out
 
+#all nodes
+nodesA=list(nx.nodes(G))
 
+
+########################################################################################################################
 #take alal the neiboras of the graph to
 cc=neb(G)
 
@@ -122,8 +128,11 @@ concomp=list(list(nx.connected_components(G2)))
 
 numCluster=len(concomp)
 
-nx.draw_networkx(G2)
-plt.show()
+
+#######################################################G2
+#disable the comment to show the local briges from dataset
+#nx.draw_networkx(G2)
+#plt.show()
 
 #we import quality that has the modularity function 
 #communities = {node: community for community, node in enumerate(neighbors.keys())}
@@ -156,13 +165,17 @@ popoulationInit['chromB']=cc['mmCCNode']
 chromosom=[]
 
 loopy=1000
+neibrLoop=int(0.5*loopy)
+randomn=int(loopy-neibrLoop)
+
 Ga=[]
 concompA=[]
-while loopy>0:
+#create fist initail popoulation where there are neibors the 50% of initial population
+while neibrLoop>0:
     for i in cc['neighbors']:
         inde = random.randint(0, len(i) - 1)
         chromosom.append(i[inde])
-    tempna='chromosom'+str(loopy)
+    tempna='chromosom'+str(neibrLoop)
     popoulationInit[tempna] = chromosom
     chromosom=[]
     name='G'+str(tempna)
@@ -170,7 +183,41 @@ while loopy>0:
     #concompA.append(list(list(nx.connected_components(G3+tempna))))
     #'G'+str(tempna) = nx.from_pandas_edgelist(popoulation, 'node', tempna)
     #concomp+tempna=list(list(nx.connected_components(G3+tempna)))
-    loopy = loopy - 1
+    neibrLoop = neibrLoop - 1
+#create random popoulation of the graph //the nodes could belong in the same  community even if they are not neaibors
+
+# random the nodes @nodesB for each nodeA create a link
+nodesB=list(nx.nodes(G))
+random.shuffle(nodesB)
+chromosom=[]
+while randomn>0:
+
+    for i in nodesA:
+        chromosom.append(nodesB[i])
+    tempna = 'chromosom' + str(randomn)
+    randomn=randomn-1
+    popoulationInit[tempna] = chromosom
+    chromosom = []
+    
+
+# while randomn>0:
+#     for i in cc['neighbors']:
+#         inde = random.randint(0, len(i) - 1)
+#         chromosom.append(i[inde])
+#     tempna='chromosom'+str(loopy)
+#     popoulationInit[tempna] = chromosom
+#     chromosom=[]
+#     name='G'+str(tempna)
+#     Ga.append(nx.from_pandas_edgelist(popoulationInit, 'node', tempna))
+
+
+
+    #concompA.append(list(list(nx.connected_components(G3+tempna))))
+    #'G'+str(tempna) = nx.from_pandas_edgelist(popoulation, 'node', tempna)
+    #concomp+tempna=list(list(nx.connected_components(G3+tempna)))
+    randomn = randomn - 1
+
+
 
 #
 
@@ -215,6 +262,16 @@ indx=resultF.index.values.tolist()
 
 for i in resultF.index.values.tolist():
     offspiringN['chromosom' + str(i)] = offspiring['chromosom' + str(i)]
+
+#take the 3 best modularity to nxt generation with oute
+bb=resultF.sort_values(by=['modularity'],ascending=False).head(3)
+bbf=bb.index.values.tolist()
+#next next (2) generation
+offspiringNf= pd.DataFrame()
+
+for i in bbf:
+    offspiringNf['chromosom' + str(i)] = offspiring['chromosom' + str(i)]
+
 
 #ofsringn
 #we have the generation in loop from now each generation will generated in loop  wile we do not have impovments
@@ -279,7 +336,8 @@ for generation in range (1,5):
 
     # take finala result the result for next generation
     result = pd.DataFrame()
-    result = gpdf[gpdf['modularity'] > 0.750]
+    result = gpdf[gpdf['modularity'] > 0.75]
+    bb=resultF.sort_values(by=['modularity'], ascending=False).head(3)
     indx = list(result['indx'])
 
     # we select the second generation all the chromosomu with modularity > 0.79
@@ -288,11 +346,12 @@ for generation in range (1,5):
     offspiringN = pd.DataFrame()
 
     offspiringN['node'] = cc['node']
+    offspiringN.append(offspiringNf)
     for i in result['indx']:
     #indx = resultF.index.values.tolist()
     # for i in resultF.index.values.tolist():
         offspiringN[i] = offspiring[(i)]
-    print(generation,generation,generation,generation,generation)
+    print('Number of interation :',generation,generation,generation,generation,generation)
 
 
 
