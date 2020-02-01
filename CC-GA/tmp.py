@@ -63,7 +63,7 @@ def ccNodeVal(g,cc):
             node1=random.choice(tempko)
          #these prints are only for debuging to notify the values
 
-        print(" The maximou CC is node",node1, 'with maximum cc ',ko,tempko)
+        #print(" The maximou CC is node",node1, 'with maximum cc ',ko,tempko)
 
         nodeL.append(node1)
         km.append(ko)
@@ -212,62 +212,87 @@ offspiringN= pd.DataFrame()
 
 offspiringN['node']=cc['node']
 indx=resultF.index.values.tolist()
+
 for i in resultF.index.values.tolist():
     offspiringN['chromosom' + str(i)] = offspiring['chromosom' + str(i)]
 
-
+#ofsringn
 #we have the generation in loop from now each generation will generated in loop  wile we do not have impovments
 ######################################LOOP#######################################################################
-for generation in range (1,3):
+for generation in range (1,5):
     indx2=[]
+    gpdf = pd.DataFrame()
 
     tmp2=[]
     #for i in range(0, offspiringN.shape[1] - 1):
     offspiring = pd.DataFrame()
     for ind in indx:
+        if isinstance(indx[0], int):
+            offspiring['node']=cc['node']
+            #TODO we have to add the probability of cross
+            ran =  random.choice(indx)  # is the random  chose from the list
+            chrRan = 'chromosom' + str(ran)
+            off = 'chromosom' + str(ind)
+            tmp2 = (Ucross(list(offspiringN[off]), offspiringN[chrRan]))
+            offspiring['chromosom' + str(ind)] = tmp2
+            indx2.append('chromosom' + str(ind))
+            tmp2=[]
+        else:
+            ##############################
+                offspiring['node'] = cc['node']
+                # TODO we have to add the probability of cross
+                ran = random.choice(indx)  # is the random  chose from the list
+                chrRan = str(ran)
+                off = str(ind)
+                tmp2 = (Ucross(list(offspiringN[off]), offspiringN[chrRan]))
+                offspiring[str(ind)] = tmp2
+                indx2.append(str(ind))
+                tmp2 = []
 
-        offspiring['node']=cc['node']
-        #TODO we have to add the probability of cross
-        ran =  random.choice(indx)  # is the random  chose from the list
-        chrRan = 'chromosom' + str(ran)
-        off = 'chromosom' + str(ind)
-        tmp2 = (Ucross(list(offspiringN[off]), offspiringN[chrRan]))
-        offspiring['chromosom' + str(ind)] = tmp2
-        indx2.append('chromosom' + str(ind))
-        tmp2=[]
+            ###############################
+#ofsring dataset cross the new popoylation
+
 
     # evalouation each chromosome
     # we have to bult a graph for each cromosome and find the conected comunites
     # then we run modularity and storees it
-    concomponet = []
+    modularityy=[]
     result = pd.DataFrame()
     gp = []
-
+    gpin=[]
     for i in indx2:  # we have 2 extra coloum 0 coloumn and node coloumn
         #chro = 'chromosom' + str(i)
-        gp.append(nx.from_pandas_edgelist(offspiring, i, 'node'))
+        tmpgr=(nx.from_pandas_edgelist(offspiring, i, 'node'))
+        concomponet=list(list(nx.connected_components(tmpgr)))
+        modularityy.append(modularity(tmpgr,concomponet))
+        gpin.append(i)
         #print(chro)
-    for i in gp:
-        # gr=gp[i]
-        concomponet.append(modularity(i, list(list(nx.connected_components(i)))))
-        result['modularity'] = concomponet
-        # take finala result the result for next generation
-        resultF = result[result['modularity'] > 0.75]
+    gpdf['modularity']=modularityy
+    #gpdf['concomp']=concomponet
+    gpdf['indx'] =gpin
+    # for i in range (0,len(gpdf['graph'])):
+    #     # gr=gp[i]
+    #     concomponet.append(modularity(gp[i], list(list(nx.connected_components(gp[i])))))
+    #     ingp.append(i)
+   # result['modularity'] = concomponet
+    #result['indx']=ingp
+
+    # take finala result the result for next generation
+    result = pd.DataFrame()
+    result = gpdf[gpdf['modularity'] > 0.750]
+    indx = list(result['indx'])
+
+    # we select the second generation all the chromosomu with modularity > 0.79
 
     # we select the second generation all the chromosomu with modularity > 0.79
     offspiringN = pd.DataFrame()
 
     offspiringN['node'] = cc['node']
-    indx = resultF.index.values.tolist()
-    for i in resultF.index.values.tolist():
-        offspiringN['chromosom' + str(i)] = offspiring['chromosom' + str(i)]
-
-
-
-
-
-
-
+    for i in result['indx']:
+    #indx = resultF.index.values.tolist()
+    # for i in resultF.index.values.tolist():
+        offspiringN[i] = offspiring[(i)]
+    print(generation,generation,generation,generation,generation)
 
 
 
