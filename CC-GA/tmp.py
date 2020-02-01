@@ -187,16 +187,19 @@ while neibrLoop>0:
 #create random popoulation of the graph //the nodes could belong in the same  community even if they are not neaibors
 
 # random the nodes @nodesB for each nodeA create a link
-nodesB=list(nx.nodes(G))
-random.shuffle(nodesB)
-chromosom=[]
+
+
+
 #we have to be carefiulk with loopy index because is the index of chromosum and we have deiferent names
 while randomn<=loopy:
+    nodesB = list(nx.nodes(G))
+    random.shuffle(nodesB)#random select a node
+    chromosom = []
     for i in nodesA:
-        chromosom.append(nodesB[i])
         tempna = 'chromosom' + str(randomn+3)# add 3 bacouse we apend the node and chromosomu0
-        chromosom = []
+        chromosom.append(nodesB.pop())
     popoulationInit[tempna] = chromosom
+    chromosom = []
     randomn = randomn +1
     
 
