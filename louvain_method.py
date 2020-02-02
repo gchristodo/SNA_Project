@@ -18,11 +18,8 @@ def louvain(G, visualize=False, tol=0.01):
    start = datetime.now() 
    # Get neighbors
    neighbors = {node: list(G.neighbors(node)) for node in G.nodes()}
-   # Get communities
-   communities = {
-      node: community
-      for community, node in enumerate(neighbors.keys())
-   }
+   # Set initial communities
+   communities = { node: node for node in neighbors.keys() }
    # Get nodes
    nodes = list(G.nodes())
    # Calculate initial modularity
@@ -50,12 +47,12 @@ def louvain(G, visualize=False, tol=0.01):
          # The node is absorbed by the neighbor along with all the nodes
          # that belonged in its cluster
          if tmp_mod > mod:
-               communities[node] = communities[best_neighbor]
-               for n, c in communities.items():
-                  if c == node:
-                     communities[n] = communities[c]
+            communities[node] = communities[best_neighbor]
+            for n, c in communities.items():
+               if c == node:
+                  communities[n] = communities[c]
 
-      # Create the new graphu pdated by the new relationships
+      # Create the new graph updated by the new relationships
       G = nx.Graph()
       new_nodes = list(set([c for n, c in communities.items()]))
       G.add_nodes_from(new_nodes)
@@ -63,6 +60,7 @@ def louvain(G, visualize=False, tol=0.01):
          for n in neighbors[ex_node]:
                # Draw an edge between the community and the community of the neighbor of the ex_node
                G.add_edge(communities[ex_node], communities[n])
+     
       # Calculate new modularity
       new_mod = modularity(communities, G)
 
