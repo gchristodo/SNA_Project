@@ -49,8 +49,8 @@ pos = nx.spring_layout(G)
 y_true = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 
-mutationRate=0.5
-prob=0.75 #prob of croos over
+mutationRate=0.2
+prob=0.8 #prob of croos over
 
 # now we have to find the maximuc cc for each nebor
 #and
@@ -177,7 +177,7 @@ popoulationInit['chromB']=cc['mmCCNode']
 
 chromosom=[]
 
-loopy=1000
+loopy=10000
 neibrLoop=int(0.5*loopy)
 chromosomN=int(0.5*loopy) #for indexing name
 randomn=int(loopy-neibrLoop)
@@ -332,10 +332,11 @@ for generation in range (1,100):
     tmp2=[]
     #for i in range(0, offspiringN.shape[1] - 1):
     offspiring = pd.DataFrame()
+    offspiring['node'] = cc['node']
 
     for ind in indx:
         if isinstance(indx[0], int):  #we have different structurs when the inex is oiut of the loop from inital population
-            offspiring['node']=cc['node']
+            #offspiring['node']=cc['node']
             #TODO we have to add the probability of cross
             ran =  random.choice(indx)  # is the random  chose from the list
             chrRan = 'chromosom' + str(ran)
@@ -350,7 +351,7 @@ for generation in range (1,100):
                 tmp2=[]
         else:
             ##############################
-                offspiring['node'] = cc['node']
+             #   offspiring['node'] = cc['node']
                 # TODO we have to add the probability of cross
                 ran = random.choice(indx)  # is the random  chose from the list
                 chrRan = str(ran)
@@ -394,7 +395,8 @@ for generation in range (1,100):
 
     # take finala result the result for next generation
     result = pd.DataFrame()
-    result = gpdf[gpdf['modularity'] > -101]
+    result = gpdf[gpdf['modularity'] > 0.5]
+    b1=result.sort_values(by=['modularity'], ascending=False).head(1)
     bb=result.sort_values(by=['modularity'], ascending=False).head(4)
 
     indx = list(result['indx']) #for indexing the oofsring only from the result chosen creteria
@@ -407,7 +409,7 @@ for generation in range (1,100):
     offspiringN=bbf  #next genertion offspingN with bbg chromosums
 
     #offspiringN['node'] = cc['node']
-    bbf= pd.DataFrame()  #clear the bbf
+   #bbf= pd.DataFrame()  #clear the bbf
   #3  for b in bb['indx']: #next and next next generatrion bbf selected chromosom in idx
     #    bbf[b]=offspiring[b]
 
@@ -429,14 +431,15 @@ for generation in range (1,100):
     nummutation=int(mutationRate*offspiringN.shape[1])
     rinxx= indx[:]  #copy list
     muta=[]
-    while curpup>=0:
-        random.shuffle(rinxx) #take random %persent times ffrom ofspring N mutatioon
-        try:
-            muta.append(rinxx.pop())
-        except:
-             print("Mutation perfomed")
+    if len(indx)>0:
+        while curpup>=0:
+            random.shuffle(rinxx) #take random %persent times ffrom ofspring N mutatioon
+            try:
+                muta.append(rinxx.pop())
+            except:
+                 print("Mutation perfomed")
+            curpup=curpup-1
+        for i in muta:   #implemet the mutation
+            offspiringN[i] = mutation(offspiringN[i], nodesA)  #replece a random gen  that is goint to cross to the next generation
         curpup=curpup-1
-    for i in muta:   #implemet the mutation
-        offspiringN[i] = mutation(offspiringN[i], nodesA)  #replece a random gen  that is goint to cross to the next generation
-
 
