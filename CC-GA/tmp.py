@@ -130,7 +130,8 @@ numCluster=len(concomp)
 
 
 #######################################################G2
-#disable the comment to show the local briges from dataset
+#disable the comment to show the local briges from dataset FROM Υthe graph.. if we plot the graph we see the communites apears  and the eages are missinf is local briges
+#very nice method to found local briges++
 #nx.draw_networkx(G2)
 #plt.show()
 
@@ -147,8 +148,8 @@ mod1=modularity(G2,concomp)
 
 #Now we have tat mod1 the modulartity of the good inital chromosum that is going to be the first and second generation so we pot in popoulation initial
 popoulationInit= pd.DataFrame()
-evol= pd.DataFrame()
-evol['chromB']=mod1
+#evol= pd.DataFrame()
+#evol['chromB']=mod1
 popoulationInit['node']=cc['node']
 popoulationInit['chromB']=cc['mmCCNode']
 
@@ -164,43 +165,67 @@ popoulationInit['chromB']=cc['mmCCNode']
 
 chromosom=[]
 
-loopy=1000
+loopy=100000
 neibrLoop=int(0.5*loopy)
 randomn=int(loopy-neibrLoop)
 
 Ga=[]
 concompA=[]
 #create fist initail popoulation where there are neibors the 50% of initial population
+chromosom=[]
+
+
+
+
 while neibrLoop>0:
     for i in cc['neighbors']:
-        inde = random.randint(0, len(i) - 1)
-        chromosom.append(i[inde])
-    tempna='chromosom'+str(neibrLoop)
+        k = list(i)
+        random.shuffle(k)
+        chromosom.append(k.pop())
+    tempna = 'chromosom' + str(neibrLoop)
     popoulationInit[tempna] = chromosom
-    chromosom=[]
-    name='G'+str(tempna)
-    Ga.append(nx.from_pandas_edgelist(popoulationInit, 'node', tempna))
+    chromosom = []
+    #name = 'G' + str(tempna)
+    neibrLoop = neibrLoop - 1
+
+
+    #----
+    # for i in cc['neighbors']:
+    #     #inde = random.randint(0, len(i) - 1) #does not work very wall onother random we need
+    #     chromosom.append(i[inde])
+    # tempna='chromosom'+str(neibrLoop)
+    # popoulationInit[tempna] = chromosom
+    # chromosom=[]
+    # name='G'+str(tempna)
+
+
+    #---------------
+    #Ga.append(nx.from_pandas_edgelist(popoulationInit, 'node', tempna))
     #concompA.append(list(list(nx.connected_components(G3+tempna))))
     #'G'+str(tempna) = nx.from_pandas_edgelist(popoulation, 'node', tempna)
     #concomp+tempna=list(list(nx.connected_components(G3+tempna)))
-    neibrLoop = neibrLoop - 1
+
+
 #create random popoulation of the graph //the nodes could belong in the same  community even if they are not neaibors
 
 # random the nodes @nodesB for each nodeA create a link
 
 
 
-#we have to be carefiulk with loopy index because is the index of chromosum and we have deiferent names
+#we have to be carefiulk with loopy index because is the index of chromosum and we have deiferent names with other index
+chromosom=[]
 while randomn<=loopy:
     nodesB = list(nx.nodes(G))
     random.shuffle(nodesB)#random select a node
     chromosom = []
     for i in nodesA:
-        tempna = 'chromosom' + str(randomn+3)# add 3 bacouse we apend the node and chromosomu0
+        tempna = 'chromosom' + str(randomn+1)# add 3 bacouse we apend the node and chromosomu0
         chromosom.append(nodesB.pop())
     popoulationInit[tempna] = chromosom
     chromosom = []
     randomn = randomn +1
+
+
     
 
 # while randomn>0:
@@ -218,7 +243,7 @@ while randomn<=loopy:
     #concompA.append(list(list(nx.connected_components(G3+tempna))))
     #'G'+str(tempna) = nx.from_pandas_edgelist(popoulation, 'node', tempna)
     #concomp+tempna=list(list(nx.connected_components(G3+tempna)))
-    randomn = randomn - 1
+   # randomn = randomn - 1
 
 
 
@@ -254,6 +279,7 @@ for i in gp:
     #gr=gp[i]
     concomponet.append(modularity(i,list(list(nx.connected_components(i)))))
 result['modularity']=concomponet
+result['grpah']=gp
 #take finala result the result for next generation
 resultF=result[result['modularity']>0.75]
 
@@ -262,23 +288,29 @@ offspiringN= pd.DataFrame()
 
 offspiringN['node']=cc['node']
 indx=resultF.index.values.tolist()
-
+#indx is index for offspring
+bbf= pd.DataFrame()
+bbf['node']=cc['node']
 for i in resultF.index.values.tolist():
     offspiringN['chromosom' + str(i)] = offspiring['chromosom' + str(i)]
 
 #take the 3 best modularity to nxt generation with oute
 bb=resultF.sort_values(by=['modularity'],ascending=False).head(3)
-bbf=bb.index.values.tolist()
-#next next (2) generation
-offspiringNf= pd.DataFrame()
-
-for i in bbf:
-    offspiringNf['chromosom' + str(i)] = offspiring['chromosom' + str(i)]
-
-
+for b in bb.index.values.tolist():
+    bbf['chromosom'+str(b)]=offspiring['chromosom'+str(b)]
+bbf['chromosom0']=offspiring['chromosom0']
+#bbf dataframe is the best chromeseme for the generation -- servining the evolou natural choise so
+#next generation Offsring N and bbf the Bad dataframe just ignore
+#offspiringNf= pd.DataFrame() ##Απευθεας αναθεση next generation each generation remove the 3 worst and rteplace with the 3 best
+#so when we are finish in this dataframe will we have the soloution
+#for i in bbf:
+ #   offspiringNf['chromosom' + str(i)] = offspiring['chromosom' + str(i)]
+offspiring= pd.DataFrame() #delete the first cross over
+print("Genereration")
+#Above was initialization papoulation Below will be next generations  tha range of the
 #ofsringn
 #we have the generation in loop from now each generation will generated in loop  wile we do not have impovments
-######################################LOOP#######################################################################
+######################################LOOP######################################################################################################################################
 for generation in range (1,5):
     indx2=[]
     gpdf = pd.DataFrame()
@@ -286,8 +318,9 @@ for generation in range (1,5):
     tmp2=[]
     #for i in range(0, offspiringN.shape[1] - 1):
     offspiring = pd.DataFrame()
+
     for ind in indx:
-        if isinstance(indx[0], int):
+        if isinstance(indx[0], int):  #we have different structurs when the inex is oiut of the loop from inital population
             offspiring['node']=cc['node']
             #TODO we have to add the probability of cross
             ran =  random.choice(indx)  # is the random  chose from the list
@@ -310,7 +343,7 @@ for generation in range (1,5):
                 tmp2 = []
 
             ###############################
-#ofsring dataset cross the new popoylation
+#offsring dataset cross the new popoylation and indx2 is the index
 
 
     # evalouation each chromosome
@@ -340,21 +373,32 @@ for generation in range (1,5):
     # take finala result the result for next generation
     result = pd.DataFrame()
     result = gpdf[gpdf['modularity'] > 0.75]
-    bb=resultF.sort_values(by=['modularity'], ascending=False).head(3)
-    indx = list(result['indx'])
+    bb=result.sort_values(by=['modularity'], ascending=False).head(3)
+
+    indx = list(gpdf['indx']) #for indexing the oofsring
 
     # we select the second generation all the chromosomu with modularity > 0.79
 
     # we select the second generation all the chromosomu with modularity > 0.79
     offspiringN = pd.DataFrame()
+    bbf['node'] = cc['node']
+    offspiringN=bbf  #next genertion offspingN with bbg chromosums
 
-    offspiringN['node'] = cc['node']
-    offspiringN.append(offspiringNf)
-    for i in result['indx']:
+    #offspiringN['node'] = cc['node']
+    bbf= pd.DataFrame()  #clear the bbf
+    for b in bb['indx']: #next and next next generatrion bbf
+        bbf[b]=offspiring[b]
+
+
+    #offspiringN.append(offspiringNf)
+
+    for i in indx:    #chose the chromosom two the next generatin offsprinN
     #indx = resultF.index.values.tolist()
     # for i in resultF.index.values.tolist():
         offspiringN[i] = offspiring[(i)]
     print('Number of interation :',generation,generation,generation,generation,generation)
+    offspiring=pd.DataFrame()
+    offspiring['node'] = cc['node']
 
 
 
