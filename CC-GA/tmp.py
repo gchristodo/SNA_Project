@@ -15,6 +15,17 @@ def nebigorList(G,no):
     allne=list(G.neighbors(no))
     return allne
 
+#mutation replace a comunity random with other
+
+def mutation(chromosum,nodes):
+    nl=list(nodes)
+    random.shuffle(nl)  #take randomly one node
+    rplc=nl.pop()
+    indxrp= random.randint(0,len(chromosum))
+    chromosum[indxrp] =rplc #replace the random node with the  random aother node
+    return chromosum
+
+
 
 #Take the neibor list @DataFrame for each nodeq
 def neb(z):
@@ -38,7 +49,8 @@ pos = nx.spring_layout(G)
 y_true = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 
-
+mutationRate=0.5
+prob=0.75 #prob of croos over
 
 # now we have to find the maximuc cc for each nebor
 #and
@@ -165,8 +177,9 @@ popoulationInit['chromB']=cc['mmCCNode']
 
 chromosom=[]
 
-loopy=100000
+loopy=1000
 neibrLoop=int(0.5*loopy)
+chromosomN=int(0.5*loopy) #for indexing name
 randomn=int(loopy-neibrLoop)
 
 Ga=[]
@@ -281,7 +294,7 @@ for i in gp:
 result['modularity']=concomponet
 result['grpah']=gp
 #take finala result the result for next generation
-resultF=result[result['modularity']>0.75]
+resultF=result[result['modularity']>0.5]
 
 #we select the second generation all the chromosomu with modularity > 0.79
 offspiringN= pd.DataFrame()
@@ -309,9 +322,10 @@ offspiring= pd.DataFrame() #delete the first cross over
 print("Genereration")
 #Above was initialization papoulation Below will be next generations  tha range of the
 #ofsringn
+#popoulationInit=pd.DataFrame()
 #we have the generation in loop from now each generation will generated in loop  wile we do not have impovments
 ######################################LOOP######################################################################################################################################
-for generation in range (1,5):
+for generation in range (1,100):
     indx2=[]
     gpdf = pd.DataFrame()
 
@@ -326,10 +340,14 @@ for generation in range (1,5):
             ran =  random.choice(indx)  # is the random  chose from the list
             chrRan = 'chromosom' + str(ran)
             off = 'chromosom' + str(ind)
-            tmp2 = (Ucross(list(offspiringN[off]), offspiringN[chrRan]))
-            offspiring['chromosom' + str(ind)] = tmp2
-            indx2.append('chromosom' + str(ind))
-            tmp2=[]
+            #probability to cross
+            rando=random.randint(1, 100)
+            perh=prob*100
+            if perh>rando:
+                tmp2 = (Ucross(list(offspiringN[off]), offspiringN[chrRan]))
+                offspiring['chromosom' + str(ind)] = tmp2
+                indx2.append('chromosom' + str(ind))
+                tmp2=[]
         else:
             ##############################
                 offspiring['node'] = cc['node']
@@ -337,10 +355,14 @@ for generation in range (1,5):
                 ran = random.choice(indx)  # is the random  chose from the list
                 chrRan = str(ran)
                 off = str(ind)
-                tmp2 = (Ucross(list(offspiringN[off]), offspiringN[chrRan]))
-                offspiring[str(ind)] = tmp2
-                indx2.append(str(ind))
-                tmp2 = []
+            # probability to cross
+                rando = random.randint(1, 100)
+                perh = prob * 100
+                if perh > rando:
+                    tmp2 = (Ucross(list(offspiringN[off]), offspiringN[chrRan]))
+                    offspiring[str(ind)] = tmp2
+                    indx2.append(str(ind))
+                    tmp2 = []
 
             ###############################
 #offsring dataset cross the new popoylation and indx2 is the index
@@ -372,10 +394,10 @@ for generation in range (1,5):
 
     # take finala result the result for next generation
     result = pd.DataFrame()
-    result = gpdf[gpdf['modularity'] > 0.75]
-    bb=result.sort_values(by=['modularity'], ascending=False).head(3)
+    result = gpdf[gpdf['modularity'] > -101]
+    bb=result.sort_values(by=['modularity'], ascending=False).head(4)
 
-    indx = list(gpdf['indx']) #for indexing the oofsring
+    indx = list(result['indx']) #for indexing the oofsring only from the result chosen creteria
 
     # we select the second generation all the chromosomu with modularity > 0.79
 
@@ -386,8 +408,8 @@ for generation in range (1,5):
 
     #offspiringN['node'] = cc['node']
     bbf= pd.DataFrame()  #clear the bbf
-    for b in bb['indx']: #next and next next generatrion bbf
-        bbf[b]=offspiring[b]
+  #3  for b in bb['indx']: #next and next next generatrion bbf selected chromosom in idx
+    #    bbf[b]=offspiring[b]
 
 
     #offspiringN.append(offspiringNf)
@@ -397,8 +419,24 @@ for generation in range (1,5):
     # for i in resultF.index.values.tolist():
         offspiringN[i] = offspiring[(i)]
     print('Number of interation :',generation,generation,generation,generation,generation)
-    offspiring=pd.DataFrame()
-    offspiring['node'] = cc['node']
+    offspiring=pd.DataFrame() #delete offspiring
+    offspiring['node'] = cc['node'] #appen the nodes
 
+    #mutation
+    #fint he curent popoulation
+    curpup=int(offspiringN.shape[1]*mutationRate)
+
+    nummutation=int(mutationRate*offspiringN.shape[1])
+    rinxx= indx[:]  #copy list
+    muta=[]
+    while curpup>=0:
+        random.shuffle(rinxx) #take random %persent times ffrom ofspring N mutatioon
+        try:
+            muta.append(rinxx.pop())
+        except:
+             print("Mutation perfomed")
+        curpup=curpup-1
+    for i in muta:   #implemet the mutation
+        offspiringN[i] = mutation(offspiringN[i], nodesA)  #replece a random gen  that is goint to cross to the next generation
 
 
