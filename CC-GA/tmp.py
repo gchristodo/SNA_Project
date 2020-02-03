@@ -49,7 +49,7 @@ pos = nx.spring_layout(G)
 y_true = [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 
-mutationRate=0.2
+mutationRate=0.35
 prob=0.8 #prob of croos over
 
 # now we have to find the maximuc cc for each nebor
@@ -147,7 +147,7 @@ numCluster=len(concomp)
 #nx.draw_networkx(G2)
 #plt.show()
 
-#we import quality that has the modularity function 
+#we import quality that has the modularity function
 #communities = {node: community for community, node in enumerate(neighbors.keys())}
 from quality import modularity
 
@@ -164,7 +164,7 @@ popoulationInit= pd.DataFrame()
 #evol['chromB']=mod1
 popoulationInit['node']=cc['node']
 popoulationInit['chromB']=cc['mmCCNode']
-
+result= pd.DataFrame()
 
 
 
@@ -177,7 +177,7 @@ popoulationInit['chromB']=cc['mmCCNode']
 
 chromosom=[]
 
-loopy=10000
+loopy=10
 neibrLoop=int(0.5*loopy)
 chromosomN=int(0.5*loopy) #for indexing name
 randomn=int(loopy-neibrLoop)
@@ -283,7 +283,7 @@ for i in range (1,popoulationInit.shape[1]-1):
 #we have to bult a graph for each cromosome and find the conected comunites
 #then we run modularity and storees it
 concomponet=[]
-result= pd.DataFrame()
+#----------------------------------------------------------------------------result= pd.DataFrame()
 gp=[]
 for i in range (0,offspiring.shape[1]-2): #we have 2 extra coloum 0 coloumn and node coloumn
     chro = 'chromosom' + str(i)
@@ -294,15 +294,15 @@ for i in gp:
 result['modularity']=concomponet
 result['grpah']=gp
 #take finala result the result for next generation
-resultF=result[result['modularity']>0.5]
+resultF=result[result['modularity']>0.7]
 
 #we select the second generation all the chromosomu with modularity > 0.79
 offspiringN= pd.DataFrame()
-
+bbf=pd.DataFrame()
 offspiringN['node']=cc['node']
 indx=resultF.index.values.tolist()
 #indx is index for offspring
-bbf= pd.DataFrame()
+#####################################################3bbf= pd.DataFrame()
 bbf['node']=cc['node']
 for i in resultF.index.values.tolist():
     offspiringN['chromosom' + str(i)] = offspiring['chromosom' + str(i)]
@@ -319,13 +319,14 @@ bbf['chromosom0']=offspiring['chromosom0']
 #for i in bbf:
  #   offspiringNf['chromosom' + str(i)] = offspiring['chromosom' + str(i)]
 offspiring= pd.DataFrame() #delete the first cross over
+res=pd.DataFrame() #result each tgeneration final result
 print("Genereration")
 #Above was initialization papoulation Below will be next generations  tha range of the
 #ofsringn
 #popoulationInit=pd.DataFrame()
 #we have the generation in loop from now each generation will generated in loop  wile we do not have impovments
 ######################################LOOP######################################################################################################################################
-for generation in range (1,100):
+for generation in range (1,50):
     indx2=[]
     gpdf = pd.DataFrame()
 
@@ -337,7 +338,7 @@ for generation in range (1,100):
     for ind in indx:
         if isinstance(indx[0], int):  #we have different structurs when the inex is oiut of the loop from inital population
             #offspiring['node']=cc['node']
-            #TODO we have to add the probability of cross
+            #TODOwe have to add the probability of cross-->=ok
             ran =  random.choice(indx)  # is the random  chose from the list
             chrRan = 'chromosom' + str(ran)
             off = 'chromosom' + str(ind)
@@ -373,7 +374,7 @@ for generation in range (1,100):
     # we have to bult a graph for each cromosome and find the conected comunites
     # then we run modularity and storees it
     modularityy=[]
-    result = pd.DataFrame()
+   ################################################################################################# result = pd.DataFrame()
     gp = []
     gpin=[]
     for i in indx2:  # we have 2 extra coloum 0 coloumn and node coloumn
@@ -394,18 +395,36 @@ for generation in range (1,100):
     #result['indx']=ingp
 
     # take finala result the result for next generation
-    result = pd.DataFrame()
-    result = gpdf[gpdf['modularity'] > 0.5]
-    b1=result.sort_values(by=['modularity'], ascending=False).head(1)
-    bb=result.sort_values(by=['modularity'], ascending=False).head(4)
+    #result = pd.DataFrame()
+    result = gpdf[gpdf['modularity'] > 0.7]
+    #b1=result.sort_values(by=['modularity'], ascending=False).head(1)
+#    if b1>
+
+
+    bb=result.sort_values(by=['modularity'], ascending=False).head(9)
+    nextgen=list(bb['indx']) #next generation the 9 higtest mofularity values
+    nextmod=list(bb['modularity'])
+
+    if (len(nextgen)-len(res)==0):
+        res['chromosom'+str(generation)]=nextgen
+        res[generation]=nextmod
+    else:
+        dif=len(nextgen) - len(res)
+        while dif>0:
+            nextgen.append("none")
+            nextmod.append(0)
+        res['chromosom' + str(generation)] = nextgen
+        res[generation] = nextmod
+
+
 
     indx = list(result['indx']) #for indexing the oofsring only from the result chosen creteria
 
     # we select the second generation all the chromosomu with modularity > 0.79
 
     # we select the second generation all the chromosomu with modularity > 0.79
-    offspiringN = pd.DataFrame()
-    bbf['node'] = cc['node']
+    #offspiringN = pd.DataFrame()
+    #bbf['node'] = cc['node']
     offspiringN=bbf  #next genertion offspingN with bbg chromosums
 
     #offspiringN['node'] = cc['node']
@@ -415,6 +434,8 @@ for generation in range (1,100):
 
 
     #offspiringN.append(offspiringNf)
+    for nextg in nextgen:
+        offspiringN[nextg]=offspiring[nextg]
 
     for i in indx:    #chose the chromosom two the next generatin offsprinN
     #indx = resultF.index.values.tolist()
