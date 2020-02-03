@@ -177,10 +177,11 @@ result= pd.DataFrame()
 
 chromosom=[]
 
-loopy=10
+loopy=1000
 neibrLoop=int(0.5*loopy)
 chromosomN=int(0.5*loopy) #for indexing name
 randomn=int(loopy-neibrLoop)
+ccn=int(loopy*0.3)  #extra popoulation with higt cc
 
 Ga=[]
 concompA=[]
@@ -241,7 +242,7 @@ while randomn<=loopy:
 
     
 
-# while randomn>0:
+#while randomn>0:
 #     for i in cc['neighbors']:
 #         inde = random.randint(0, len(i) - 1)
 #         chromosom.append(i[inde])
@@ -276,6 +277,17 @@ for i in range (1,popoulationInit.shape[1]-1):
     chr = 'chromosom' + str(i)
     tmp2 = (Ucross(list(popoulationInit[chr]), popoulationInit[chrRan]))
     offspiring['chromosom' + str(i)] = tmp2
+    tmp2 = []
+
+#extra cc nodes
+while ccn>0:
+#for i in range (1,popoulationInit.shape[1]-1):
+    ran=random.randint(1, (popoulationInit.shape[1] - 2))#is the random  number
+    chrRan='chromosom'+str(ccn)
+    nameg = 'offspring' + str(ccn)
+    chr = 'chromosom999' + str(ccn)
+    tmp2 = (Ucross(list(cc['mmCCNode']), popoulationInit[chrRan]))
+    offspiring['chromosom999' + str(i)] = tmp2
     tmp2 = []
 
 
@@ -326,7 +338,7 @@ print("Genereration")
 #popoulationInit=pd.DataFrame()
 #we have the generation in loop from now each generation will generated in loop  wile we do not have impovments
 ######################################LOOP######################################################################################################################################
-for generation in range (1,50):
+for generation in range (1,200):
     indx2=[]
     gpdf = pd.DataFrame()
 
@@ -396,7 +408,7 @@ for generation in range (1,50):
 
     # take finala result the result for next generation
     #result = pd.DataFrame()
-    result = gpdf[gpdf['modularity'] > 0.7]
+    result = gpdf[gpdf['modularity'] > 0.5]
     #b1=result.sort_values(by=['modularity'], ascending=False).head(1)
 #    if b1>
 
