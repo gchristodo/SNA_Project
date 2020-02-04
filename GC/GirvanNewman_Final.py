@@ -30,7 +30,7 @@ settings_karate = {
                 },
             'multiple_edges_removal': True,
             'modularity': 'GN', # GN / other
-            'edges_change': True
+            'edges_change': False
             }
 
 settings_usa = {
@@ -288,12 +288,77 @@ class GirvanNewman:
             
         return (best_components, before_quality)
             
-                
+    def communities_dic(self, components):
+        if not isinstance(components, list):
+            raise ValueError("Components should be a list.")
+        community_dic = {}
+        for component in components:
+            for node in component:
+                community_dic[node] = components.index(component)
+        return community_dic
+    
+    def silhouette_score(self, communities, G):
+        clusters = list(set(communities.values()))
+        nodes = list(communities.keys())
+        # Create the transposed communities dict
+        communities_t = {c:[] for c in clusters}
+        for node in nodes:
+            communities_t[communities[node]].append(node)
+        sil_coef = []
+        for node in nodes:
+            # calculate average inner distance: a(u)
+            paths = []
+            for n in communities_t[communities[node]]:
+                try:
+                    paths.append(nx.shortest_path_length(G,source=node,target=n))
+                except nx.NetworkXNoPath:
+                    pass
+            a = np.mean([paths])
+            # calculate minimum average outer distance: b(u)
+            mean_outer_distances = []
+            for c in clusters:
+                for n in communities_t[c]:
+                    outer_distance = []
+                    if communities[node] != communities[n]:
+                        outer_distance = []
+                        # in case there is no path from node to n
+                        try:
+                            outer_distance.append(nx.shortest_path_length(G,source=node,target=n))
+                        except nx.NetworkXNoPath:
+                            pass
+                if outer_distance:
+                    mean_outer_distances.append(np.mean(outer_distance))
+            if mean_outer_distances:
+                b = np.min(mean_outer_distances)
+                # calculate silhouette coefficient
+                sil_coef.append( (b-a)/max(a,b) )
+        # In case the dataset is homogenized
+        if sil_coef:
+            return np.round(sil_coef, 3), np.round(max(sil_coef), 3)
+        else:
+            return sil_coef,1
+        
 ## Creating a GN object
-G = GirvanNewman(settings_jazz)
+G = GirvanNewman(settings_karate)
 
 start_time = time.time()
+original_graph = G.create_graph()
 ## Running the algorithm
 best_components, best_modularity = G.run_algorith()
 print("--- %s seconds ---" % (time.time() - start_time))
+my_com_dic = G.communities_dic(best_components)
+
+values = [my_com_dic[node] for node in original_graph.nodes()]
+fig = plt.figure()
+fig.suptitle('GN-Variation: Communities in Karate Club Network')
+nx.draw_networkx(original_graph,
+                cmap=plt.get_cmap('tab20'), 
+                node_color = values,
+                linewidths  = 1,
+                width = 0.5,
+                with_labels=True,
+                scale = 3)
+plt.show()
+silhouette = G.silhouette_score(my_com_dic, original_graph)
+
 
