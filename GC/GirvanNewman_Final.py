@@ -7,11 +7,15 @@ Created on Sat Jan 11 10:09:40 2020
 # Importing the libraries
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import cm,colors
 import pandas as pd             
 import networkx as nx
 from itertools import product
 from itertools import combinations
+from collections import defaultdict
 import time
+import json
+from matplotlib.axes._axes import _log as matplotlib_axes_logger
 
 settings_karate = {
             'graph_file': {
@@ -49,7 +53,7 @@ settings_usa = {
                 'edge_attr': 'weight'
                 },
             'multiple_edges_removal': True,
-            'modularity': 'GN', # GN / other / density
+            'modularity': 'GN', # GN / other 
             'edges_change': True # True/False: m = 2*number_of_edges
             }
 
@@ -69,7 +73,7 @@ settings_jazz = {
                 'edge_attr': 'weight'
                 },
             'multiple_edges_removal': True,
-            'modularity': 'GN', # GN / other / density
+            'modularity': 'GN', # GN / other
             'edges_change': True # True/False: m = 2*number_of_edges
             }
 
@@ -89,7 +93,7 @@ settings_euroroad = {
                 'edge_attr': 'weight'
                 },
             'multiple_edges_removal': True,
-            'modularity': 'GN', # GN / other / density
+            'modularity': 'GN', # GN / other 
             'edges_change': True # True/False: m = 2*number_of_edges
             }
 
@@ -109,7 +113,7 @@ settings_dolphins = {
                 'edge_attr': None
                 },
             'multiple_edges_removal': True,
-            'modularity': 'GN', # GN / other / density
+            'modularity': 'GN', # GN / other
             'edges_change': True # True/False: m = 2*number_of_edges
             }
 
@@ -133,6 +137,20 @@ class GirvanNewman:
         self._list_graph_nodes = None
         
     def create_graph(self):
+        '''
+        Method that creates a graph from embedded nx.graph or csv, txt file
+
+        Raises
+        ------
+        ValueError
+            If file is not in txt or csv format.
+
+        Returns
+        -------
+        TYPE
+            nx.Graph or nx.Digraph.
+
+        '''
         if self._settings['graph_file']['type'] not in ['embedded', 'csv', 'txt']:
             raise ValueError('Input file should be only embedded or in csv or txt format')
         if self.Graph_file=='karate_club':
@@ -170,6 +188,31 @@ class GirvanNewman:
         return self.Graph
     
     def update_Graph(self, graph):
+        '''
+        Α method that updates adjacency matrix, inner degree, outer degree 
+        and number of edges per modularity iteration
+
+        Parameters
+        ----------
+        graph : nx.graph object
+
+        Raises
+        ------
+        ValueError
+            Graph type is not valid if graph is not directed or undirected.
+
+        Returns
+        -------
+        A : TYPE
+            Adjacency matrix of graph.
+        in_degree : dictionary
+            A dictionary: key node, value incoming edges.
+        out_degree : dictionary
+             A dictionary: key node, value outgoing edges.
+        num_of_edges : float
+            number of edges multiplied by 2 or 1 for modularity function .
+
+        '''
         A = nx.adj_matrix(graph)
         if type(graph) == nx.Graph:
             in_degree = out_degree = dict(nx.degree(graph))
@@ -183,6 +226,15 @@ class GirvanNewman:
         return A, in_degree, out_degree, num_of_edges
             
     def info(self):
+        '''
+        A method that prints out the graph information
+
+        Returns
+        -------
+        TYPE: String
+            Information of the graph, like nx.info(G).
+
+        '''
         if not self.Graph:
             message = 'Graph not loaded'
         else:
@@ -190,6 +242,32 @@ class GirvanNewman:
         return print(message)
     
     def remove_edges(self, ebc, graph, multiple_edges_removal=True):
+        '''
+        Method that removes edges from the graph based on Edge Betweenness 
+        Centrality
+
+        Parameters
+        ----------
+        ebc : dictionary
+            A dictionary with edge as key and their betweenness centrality 
+            as value.
+        graph : nx.graph object
+            Our graph.
+        multiple_edges_removal : boolean, optional
+            DESCRIPTION. The default is True. Removes all edges with the
+            highest EBC if True. Removes only one edge if set to False
+
+        Raises
+        ------
+        ValueError
+            Edge Betweeness Centrality should be a dictionary.
+            Graph should be a nx.classes.graph.Graph object
+
+        Returns
+        -------
+        None.
+
+        '''
         if not isinstance(ebc, dict):
             raise ValueError('Edge Betweeness Centrality should be a dictionary.')
         if not isinstance(graph, nx.classes.graph.Graph):
@@ -205,7 +283,21 @@ class GirvanNewman:
                     graph.remove_edge(node[0],node[1])
                     break
     
-    def gn_iteration(self, multiple_edges_removal=True):       
+    def gn_iteration(self, multiple_edges_removal=True):
+        '''
+        Method that simulates the Girvan Newman algorithm
+
+        Parameters
+        ----------
+        multiple_edges_removal : boolean, optional
+            DESCRIPTION. The default is True. Removes all edges with the
+            highest EBC if True. Removes only one edge if set to False
+
+        Returns
+        -------
+        None.
+
+        '''
         init_num_components = nx.number_connected_components(self.Graph)
         # print(nx.number_of_edges(self.Graph))
         print("Initial Components")
@@ -221,6 +313,20 @@ class GirvanNewman:
 
         
     def get_modularity(self, degree):
+        '''
+        A method for evaluating the quality of the clusters formed. (modularity)
+
+        Parameters
+        ----------
+        degree : dictionary
+            Degree of the graph, usable only in "other" modularity function.
+
+        Returns
+        -------
+        flaot
+            A number from -1/2 to 1
+
+        '''
         self._A, self._in_degree, self._out_degree, self._num_of_edges = self.update_Graph(self.Graph)
         A = self._A
         print(A)
@@ -263,10 +369,19 @@ class GirvanNewman:
             modularity = nx.density(self.Graph)
         return modularity
             
-    def get_density(self):
-        return nx.density(self.Graph)
     
     def run_algorith(self):
+        '''
+        A method that runs the Girvan Newman algorithm with modularity evaluation
+
+        Returns
+        -------
+        best_components : list
+            A list of dictionaries that contain nodes of each community.
+        before_quality : float
+            The quality of the communities formed.
+
+        '''
         self.create_graph()
         self._A, self._in_degree, self._out_degree, self._num_of_edges = self.update_Graph(self.Graph)
         original_degree = self._in_degree
@@ -289,6 +404,26 @@ class GirvanNewman:
         return (best_components, before_quality)
             
     def communities_dic(self, components):
+        '''
+        A method that assigns each node to a community
+
+        Parameters
+        ----------
+        components : list
+            A list of dictionaries that contain nodes of each community.
+
+        Raises
+        ------
+        ValueError
+            Components should be a list.
+
+        Returns
+        -------
+        community_dic : dictionary
+            A dictionary: key->node, value->community in which the node belongs
+            to.
+
+        '''
         if not isinstance(components, list):
             raise ValueError("Components should be a list.")
         community_dic = {}
@@ -298,6 +433,10 @@ class GirvanNewman:
         return community_dic
     
     def silhouette_score(self, communities, G):
+        '''
+        A method that calculates the silhouette score
+
+        '''
         clusters = list(set(communities.values()))
         nodes = list(communities.keys())
         # Create the transposed communities dict
@@ -338,6 +477,49 @@ class GirvanNewman:
         else:
             return sil_coef,1
         
+    def draw_communities(self, G, y_actual, title):
+        """
+        Function responsible to draw the nodes to a plot with assigned colors for each individual cluster
+        Inputs
+        ----------
+        G : networkx graph
+        y_actual : list with the ground truth
+        title : The title of the plot
+        """ 
+        with open('karate_pos.json', 'r') as read_file:
+            pos_ = json.loads(read_file.read())
+        p_1 = list(map(int, pos_.keys()))
+        p_2 = list(map(np.asarray, pos_.values()))
+       
+        pos = dict(zip(p_1, p_2))
+        
+        map_ = {val:i for i, val in enumerate(set(y_actual))}
+        
+        y_actual = list(map(lambda x: map_[x], y_actual))
+        
+        fig, ax = plt.subplots(figsize=(16,9))
+    
+        # Convert y_actual list to a dict where key=cluster, value=list of nodes in the cluster
+        key = defaultdict(list)
+        for node, value in enumerate(y_actual):
+            key[value].append(node)
+    
+        # Normalize number of clusters for choosing a color
+        norm = colors.Normalize(vmin=0, vmax=len(key.keys()))
+        
+        for cluster, members in key.items():
+            nx.draw_networkx_nodes(G, pos,
+                                   nodelist=members,
+                                   node_color=cm.jet(norm(cluster)),
+                                   node_size=500,
+                                   alpha=0.8,
+                                   ax=ax)
+    
+        # Draw edges (social connections) and show final plot
+        plt.title(title)
+        labels = nx.get_edge_attributes(G,'weight')
+        nx.draw_networkx_edges(G, pos, alpha=0.5, ax=ax,edge_labels=labels)
+        
 ## Creating a GN object
 G = GirvanNewman(settings_karate)
 
@@ -346,19 +528,13 @@ original_graph = G.create_graph()
 ## Running the algorithm
 best_components, best_modularity = G.run_algorith()
 print("--- %s seconds ---" % (time.time() - start_time))
+# Assigning each node to a community
 my_com_dic = G.communities_dic(best_components)
 
 values = [my_com_dic[node] for node in original_graph.nodes()]
-fig = plt.figure()
-fig.suptitle('GN-Variation: Communities in Karate Club Network')
-nx.draw_networkx(original_graph,
-                cmap=plt.get_cmap('tab20'), 
-                node_color = values,
-                linewidths  = 1,
-                width = 0.5,
-                with_labels=True,
-                scale = 3)
-plt.show()
+## Drawing the graph with the formed communities
+G.draw_communities(original_graph, values, "Girvan Newman: Zachary's Karate Club")
+
 silhouette = G.silhouette_score(my_com_dic, original_graph)
 
 
