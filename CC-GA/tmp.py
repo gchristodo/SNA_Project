@@ -177,7 +177,7 @@ result= pd.DataFrame()
 
 chromosom=[]
 
-loopy=1000
+loopy=1012
 neibrLoop=int(0.5*loopy)
 chromosomN=int(0.5*loopy) #for indexing name
 randomn=int(loopy-neibrLoop)

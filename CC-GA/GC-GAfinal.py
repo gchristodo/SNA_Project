@@ -2,6 +2,8 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 #from community import modularity
+import matplotlib.pyplot as plt
+from matplotlib import cm,colors
 from datetime import datetime
 import numpy as np
 import networkx as nx
@@ -11,11 +13,16 @@ import random
 import warnings
 import warnings as _warnings
 import networkx as nx
+import time
 #from networkx.utils.decorators import not_implemented_for
 #from ...utils import arbitrary_element
+from collections import defaultdict
+import json
 
-
-
+mutationRate = 0.09
+probc = 0.7  # prob of croos over
+popoul=60  #initial popoulation
+loopgeneration=20
 
 
     #@uthor Sidiras
@@ -66,7 +73,7 @@ def neb(z):
     nodeneibdf['neighbors'] = a
     return nodeneibdf
 
-popoul=60
+
 
     # now we have to find the maximuc cc for each nebor
     # and
@@ -228,6 +235,47 @@ ccNodeVal(G,cc)
     # all nodes
 nodesA = list(nx.nodes(G))
 
+
+def silhouette_score(communities, G):
+    clusters = list(set(communities.values()))
+    nodes = list(communities.keys())
+    # Create the transposed communities dict
+    communities_t = {c:[] for c in clusters}
+    for node in nodes:
+        communities_t[communities[node]].append(node)
+    sil_coef = []
+    for node in nodes:
+        # calculate average inner distance: a(u)
+        paths = []
+        for n in communities_t[communities[node]]:
+            try:
+                paths.append(nx.shortest_path_length(G,source=node,target=n))
+            except nx.NetworkXNoPath:
+                pass
+        a = np.mean([paths])
+        # calculate minimum average outer distance: b(u)
+        mean_outer_distances = []
+        for c in clusters:
+            for n in communities_t[c]:
+                outer_distance = []
+                if communities[node] != communities[n]:
+                    outer_distance = []
+                    # in case there is no path from node to n
+                    try:
+                        outer_distance.append(nx.shortest_path_length(G,source=node,target=n))
+                    except nx.NetworkXNoPath:
+                        pass
+            if outer_distance:
+                mean_outer_distances.append(np.mean(outer_distance))
+        if mean_outer_distances:
+            b = np.min(mean_outer_distances)
+            # calculate silhouette coefficient
+            sil_coef.append( (b-a)/max(a,b) )
+    # In case the dataset is homogenized
+    if sil_coef:
+        return [np.round(max(sil_coef), 3)]
+    else:
+        return 1
 
 
 def CrossFirstGen():
@@ -484,11 +532,11 @@ def modularity(G, communities, weight='weight'):
         If `communities` is not a partition of the nodes of `G`.
     Examples
     --------
-    >>> import networkx.algorithms.community as nx_comm
-    >>> G = nx.barbell_graph(3, 0)
-    >>> nx_comm.modularity(G, [{0, 1, 2}, {3, 4, 5}])
+   # >>> import networkx.algorithms.community as nx_comm
+    #>>> G = nx.barbell_graph(3, 0)
+    #>>> nx_comm.modularity(G, [{0, 1, 2}, {3, 4, 5}])
     0.35714285714285704
-    >>> nx_comm.modularity(G, nx_comm.label_propagation_communities(G))
+   # >>> nx_comm.modularity(G, nx_comm.label_propagation_communities(G))
     0.35714285714285704
     References
     ----------
@@ -640,10 +688,53 @@ def neb(z):
     return nodeneibdf
 
 
+def draw_communities(self, G, y_actual, title):
+    """
+    Function responsible to draw the nodes to a plot with assigned colors for each individual cluster
+    Inputs
+    ----------
+    G : networkx graph
+    y_actual : list with the ground truth
+    title : The title of the plot
+    """
+    with open('karate_pos.json', 'r') as read_file:
+        pos_ = json.loads(read_file.read())
+    p_1 = list(map(int, pos_.keys()))
+    p_2 = list(map(np.asarray, pos_.values()))
+
+    pos = dict(zip(p_1, p_2))
+
+    map_ = {val: i for i, val in enumerate(set(y_actual))}
+
+    y_actual = list(map(lambda x: map_[x], y_actual))
+
+    fig, ax = plt.subplots(figsize=(16, 9))
+
+    # Convert y_actual list to a dict where key=cluster, value=list of nodes in the cluster
+    key = defaultdict(list)
+    for node, value in enumerate(y_actual):
+        key[value].append(node)
+
+    # Normalize number of clusters for choosing a color
+    norm = colors.Normalize(vmin=0, vmax=len(key.keys()))
+
+    for cluster, members in key.items():
+        nx.draw_networkx_nodes(G, pos,
+                               nodelist=members,
+                               node_color=cm.jet(norm(cluster)),
+                               node_size=500,
+                               alpha=0.8,
+                               ax=ax)
+
+    # Draw edges (social connections) and show final plot
+    plt.title(title)
+    labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_edges(G, pos, alpha=0.5, ax=ax, edge_labels=labels)
+
+
 #nx.draw_networkx(G)
 #plt.show()
-mutationRate = 0.04
-prob = 0.5  # prob of croos over
+
 nodesA = list(nx.nodes(G))
 
 
@@ -654,6 +745,51 @@ clusercoeff = pd.DataFrame()
 
 #run and append @Dataset for each node the max node CC with the value CC
 ccNodeVal(G,cc)
+
+
+def draw_communities(self, G, y_actual, title):
+    """
+    Function responsible to draw the nodes to a plot with assigned colors for each individual cluster
+    Inputs
+    ----------
+    G : networkx graph
+    y_actual : list with the ground truth
+    title : The title of the plot
+    """
+    with open('karate_pos.json', 'r') as read_file:
+        pos_ = json.loads(read_file.read())
+    p_1 = list(map(int, pos_.keys()))
+    p_2 = list(map(np.asarray, pos_.values()))
+
+    pos = dict(zip(p_1, p_2))
+
+    map_ = {val: i for i, val in enumerate(set(y_actual))}
+
+    y_actual = list(map(lambda x: map_[x], y_actual))
+
+    fig, ax = plt.subplots(figsize=(16, 9))
+
+    # Convert y_actual list to a dict where key=cluster, value=list of nodes in the cluster
+    key = defaultdict(list)
+    for node, value in enumerate(y_actual):
+        key[value].append(node)
+
+    # Normalize number of clusters for choosing a color
+    norm = colors.Normalize(vmin=0, vmax=len(key.keys()))
+
+    for cluster, members in key.items():
+        nx.draw_networkx_nodes(G, pos,
+                               nodelist=members,
+                               node_color=cm.jet(norm(cluster)),
+                               node_size=500,
+                               alpha=0.8,
+                               ax=ax)
+
+    # Draw edges (social connections) and show final plot
+    plt.title(title)
+    labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_edges(G, pos, alpha=0.5, ax=ax, edge_labels=labels)
+
 
 
 
@@ -688,7 +824,9 @@ numCluster = len(concomp)
 
 
 
-
+def concertDict(dicto,lista):
+    for i in range (0, len(lista)):
+        dicto[i]=lista[i]
 
 
 #evalouation each chromosome
@@ -766,7 +904,7 @@ res1B = pd.DataFrame()
 result = pd.DataFrame()
 
 import pandas as pd
-
+start_time = time.time()
 offspiring['chromosom0'] = cc['mmCCNode']
 offspiring['node'] = cc['node']
 offspiringN['chromosom0'] = cc['mmCCNode']
@@ -779,79 +917,94 @@ CrossFirstGen()
 evalouatfirtst = evalouation_Gen1()
 
 indL = evalouatfirtst[0]
+indx=indL
 
 res1 = evalouatfirtst[1]
 
 import random
 
-for generation in range(1, 100):
+for generation in range(1, loopgeneration):
 
-    print("Generation:", generation)
+#offspringN Dataset the chromosums
+    print("Generation:", generation,' Best modularity is ' )
     # cross over second generation in a loop
 
     # evalouatfirtst[0]
     # indL=evalouatfirtst[0]
     # indx=evalouatfirtst[0]
-    prob = 0.6  # probability to  cross over beteen two chromosomata
+    prob = probc # probability to  cross over beteen two chromosomata
 
-    offspiring = pd.DataFrame()  # first Dataset
+   # offspiring = pd.DataFrame()  # first Dataset
     inx3 = []  # we have different structurs when the inex is oiut of the loop from inital population
     # offspiring['node']=cc['node']
-    prob = 0.6  # probability of cross over
+    prob =probc  # probability of cross over
     # global indL
     offspiring = pd.DataFrame()  # second dataset
     inx3 = []
 
-    for i in indL:
-        inx3.append(str(i))
-        ran = random.choice(indL)  # is the random  number
+    for i in indx:
+
+        ran = random.choice(indx)  # is the random  number
         # we have different structurs when the inex is oiut of the loop from inital population
         # offspiring['node']=cc['node']
         #
-    chrRan = random.choice(indL)
-    # nameg = 'offspring' + str(i)
-    # chr = 'chromosom' + str(i)
-    rando = random.randint(1, 100)  # random 1 to 100
-    perh = prob * 100  # if is > from 100 then cross
-    if perh > rando:
-        rando = random.randint(1, 100)
-        tmp2 = (Ucross(list(offspiringN[i]), list(offspiringN[ran])))
-        offspiring[str(i)] = offspiringN[str(i)]
-    else:  # if we don have cross over the chromosom tdirect to the new generation
-        offspiring[str(i)] = offspiringN[str(i)]
-
+        chrRan = random.choice(indx)
+        # nameg = 'offspring' + str(i)
+     # chr = 'chromosom' + str(i)
+        rando = random.randint(1, 100)  # random 1 to 100
+        perh = prob * 100  # if is > from 100 then cross
+        if perh > rando:
+            rando = random.randint(1, 100)
+            tmp2 = (Ucross(list(offspiringN[i]), list(offspiringN[ran])))
+            offspiring[str(i)] = offspiringN[str(i)] #go to selection on offspint
+        else:  # if we don have cross over the chromosom tdirect to the new generation
+            offspiring[str(i)] = offspiringN[str(i)]   #go to offsring
+        inx3.append(str(i))
+    offspiringN=pd.DataFrame()
+#next---->from offspiring -->offspiringN again
+#offspirint  FOR SELECTION -------------------
     offspiring['node'] = cc['node']
+    offspiringN['node'] = cc['node']
     result = pd.DataFrame()
     concomponet = []
     gp = []
-    indx=[]
+    #indx=[]
+    grdf=pd.DataFrame()
+    ingr=[]
+    modu=[]
 
     for i in inx3:  # we have 2 extra coloum 0 coloumn and node coloumn
-        chro = inx3
-        gp.append(nx.from_pandas_edgelist(offspiringN, 'node', i))
+        chro = i
+        gp.append(nx.from_pandas_edgelist(offspiring, 'node', i))
         #concomponet.append(modularity(gp[i], list(nx.connected_components(gp[q]))))
-        indx.append(i)
+        ingr.append(i)
+    grdf['graph']=gp
+    grdf['indx']=ingr
+    for i in gp:
+        modu.append(modularity(i, list(nx.connected_components(i))))
+    grdf['modularity']=modu  #evalpouation with fitness function
 
 
 
-    for q in gp:
+
+    #for q  in grdf['graph']:
         # gr=gp[i]
-        concomponet.append(modularity(q, list(nx.connected_components(q))))
+     #   concomponet.append(modularity(q, list(nx.connected_components(q))))
+        #grdf['modularity']=(modularity(q, list(nx.connected_components(q))))
 
-
-
-    result['modularity'] = concomponet
-    result['grpah'] = gp
-    result['indx'] = i
+    result=grdf
+    #result['modularity'] = concomponet
+    #result['grpah'] = gp
+   # result['indx'] = i
     # take finala result the result for next generation
-    resultF = result[result['modularity'] > 0.65]
-    indx = chromosom + resultF.index.values.tolist()
+    resultF = grdf[grdf['modularity'] > 0.65]
+    #indx = chromosom + resultF.index.values.tolist()
     # bbf['node']=cc['node']
-    indx = chromosom + resultF.index.values.tolist()
-    res1 = result['modularity']
+    indx =grdf['indx']
+    res1 = grdf['modularity']
     # resulat modularity res1=evalgen1()
-    res1A = result[result['modularity'] > 0.70]
-    res1B = result[result['modularity'] < 0.70]
+    res1A = grdf[grdf['modularity'] > 0.75]
+    res1B = grdf[grdf['modularity'] < 0.75]
     TotalLen = len(res1A) + len(res1B)
     # 0.1 times popoulation the good chromosmes of the popoulation is 30 then we take 3 times each best chromosomys
     times = int(popoul * 0.1)
@@ -860,17 +1013,17 @@ for generation in range(1, 100):
         for k in res1A.indx.values.tolist():
             offspiringN[str(k)] = offspiring[str(k)]
             ins.append(str(k))  # indexing
-            result = result.sort_values(by=['modularity'], ascending=False)
+            grdf = result.sort_values(by=['modularity'], ascending=False)
     creted = offspiringN.shape[1] - 1
-    TotalNextPop = 60 - creted
+    TotalNextPop = popoul - creted
     # Take the first modularity chromosems is about /
     # selection we take the first chromosemes with hig modulartity 3 or more times and with low modularity only one time
-    resNext = result.sort_values(by=['modularity'], ascending=False).head(TotalNextPop)  # the best vhjromosum
+    resNext = grdf.sort_values(by=['modularity'], ascending=False).head(TotalNextPop)  # the best vhjromosum
     # now we  create or select the popoulation with low modularity
-    indx = []
+    indk = []
     for k in resNext.indx.values.tolist():
         offspiringN[str((k))] = offspiring[str(k)]
-        indx.append(str(k))
+        indk.append(str(k))
         # return indx+ins,resNext
 
         #######
@@ -880,9 +1033,9 @@ for generation in range(1, 100):
     curpup = int(offspiringN.shape[1] * mutationRate)
 
     nummutation = int(mutationRate * offspiringN.shape[1])
-    rinxx = indx[:]  # copy list
+    rinxx = indk[:]  # copy list
     muta = []
-    if len(indx)>0:
+    if len(indk)>0:
         while curpup>=0:
             random.shuffle(rinxx) #take random %persent times ffrom ofspring N mutatioon
             try:
@@ -893,9 +1046,46 @@ for generation in range(1, 100):
         for i in muta:   #implemet the mutation
             offspiringN[i] = mutation(offspiringN[i], nodesA)  #replece a random gen  that is goint to cross to the next generation
             curpup=curpup-1
+    print(generation ,"best score modularity: ",resNext["modularity"].values[0],resNext["indx"].values[0])
+    indx=indk
 
 
 
 
 
+
+
+
+## Creating a GN object
+G = nx.from_pandas_edgelist(offspiringN, 'node', resNext["indx"].values[0])
+
+best_modularity=resNext["modularity"].values[0]
+best_components=list(nx.connected_components(G))
+
+
+
+start_time = time.time()
+   # original_graph = G.create_graph()
+original_graph=nx.draw_networkx(G2)
+## Running the algorithm
+best_modularity=resNext["modularity"].values[0]
+best_components=list(nx.connected_components(G))
+print("modularity:",resNext["modularity"].values[0],"NumOF Cumm:",len(best_components),resNext["indx"].values[0])
+#draw_communities(G,y_true,y_true,"CC_GA_Zachary's_Karate_Club")
+nx.draw_networkx(G)
+plt.show()
+my_com_dic={}
+
+
+
+#best_components, best_modularity = G.run_algorith()
+print("--- %s seconds ---" % (time.time() - start_time))
+# Assigning each node to a community
+concertDict(my_com_dic,best_components)
+
+#values = [my_com_dic[node] for node in G.nodes()]
+## Drawing the graph with the formed communities
+
+
+#silhouette = G.silhouette_score(my_com_dic, original_graph)
 
