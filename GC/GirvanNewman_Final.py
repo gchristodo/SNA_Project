@@ -521,7 +521,7 @@ class GirvanNewman:
         nx.draw_networkx_edges(G, pos, alpha=0.5, ax=ax,edge_labels=labels)
         
 ## Creating a GN object
-G = GirvanNewman(settings_jazz)
+G = GirvanNewman(settings_karate)
 
 start_time = time.time()
 original_graph = G.create_graph()
@@ -535,7 +535,7 @@ values = [my_com_dic[node] for node in original_graph.nodes()]
 ## Drawing the graph with the formed communities
 # Drawing works only with karate_club due to katate_pos.json
 # If you want to draw other networks, make sure u have the equivalent json
-# G.draw_communities(original_graph, values, "Girvan Newman: Zachary's Karate Club")
+G.draw_communities(original_graph, values, "Girvan Newman: Zachary's Karate Club")
 
 silhouette = G.silhouette_score(my_com_dic, original_graph)
 print("Silhouette: ", silhouette)
